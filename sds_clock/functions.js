@@ -1,0 +1,1 @@
+export const deg_to_rad = Math.PI / 180;
