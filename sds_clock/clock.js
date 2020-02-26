@@ -4,9 +4,8 @@ import { deg_to_rad } from './functions.js';
 export default class Clock extends Canvas {
     constructor(canvas) {
         super(canvas);
-        console.log("clock");
 
-        this.font = "Century Schoolbook L";
+        this.font = "Century Schoolbook L, Georgia, serif";
 
         this.addEventListener('canvasresize', this);
     }

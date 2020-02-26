@@ -23,7 +23,6 @@ export default class Canvas extends HTMLElement {
         this.origin.y = this.canvas.offsetHeight / 2;
         this.radius = this.canvas.offsetWidth / 2;
 
-        console.log(this.canvas.getAttribute('width'), this.canvas.getAttribute('height'));
         this.diameter_ratio = this.canvas.offsetWidth / this._set_diameter;
 
         let event = new Event('canvasresize', {

@@ -5,7 +5,6 @@ import { deg_to_rad } from './functions.js';
 export default class Hands extends Canvas {
     constructor(canvas) {
         super(canvas);
-        console.log("hands");
 
         this.timer_handle = null;
 
@@ -13,20 +12,14 @@ export default class Hands extends Canvas {
         this.chimes.addEventListener('audioloaded', this);
 
         this.addEventListener('canvasresize', this);
-
     }
 
     handleEvent(e) {
-        console.log('hands event', e.type);
-        let el = e.target;
-        let type = e.type;
-
-        if (type = 'audioloaded') {
-            console.log("audio loaded...starting.");
+        if (e.type = 'audioloaded') {
             this.start();
         }
 
-        if (type.toLowerCase() === 'canvasresize') {
+        if (e.type.toLowerCase() === 'canvasresize') {
             this.start();
         }
     }
