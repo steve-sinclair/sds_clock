@@ -1,3 +1,34 @@
+/***************************************************************
+ * FILENAME:    hands.js
+ * 
+ * DESCRIPTION: Extends Canvas (canvas.js).
+ *              Timer engine, drawing functions for
+ *              the hands (hour, minute, seconds) and
+ *              conversion from time to degrees in
+ *              radians.
+ * 
+ * PUBLIC FUNCTIONS:
+ *              void start()
+ * 
+ * NOTES:       Works in concert with clock.js and is
+ *              used as a transparent canvas overlay to
+ *              the clock face described in clock.js to
+ *              avoid clock.js redrawing every loop
+ *              cycle.
+ * 
+ * PROBLEMS:    Synchronization between the ticking backing audio
+ *              and the actual movement of the second hand.
+ *              Any comments here would be appreciated.
+ * 
+ * AUTHOR:      Steve Sinclair
+ * START DATE:  17th February 2020
+ * LICENSE:     None. Free use.
+ * 
+ * CHANGE LOG:
+ * DATE         DETAIL  
+ * 26/2/20      General clean up. Removal of console logs.
+ * 27/2/20      Add module header and JSDocs headers
+***************************************************************/
 import Canvas from './canvas.js';
 import Chimes from './chimes.js';
 import { deg_to_rad } from './functions.js';
@@ -6,25 +37,54 @@ export default class Hands extends Canvas {
     constructor(canvas) {
         super(canvas);
 
+        // could use this as a route to stopping the clock
         this.timer_handle = null;
 
+        // audio object
         this.chimes = new Chimes();
+
+        // event listeners
+        // all chimes are pre-loaded
         this.chimes.addEventListener('audioloaded', this);
 
+        // user changes diameter
+        // we could set up an abstract method but events
+        // work just as well
         this.addEventListener('canvasresize', this);
     }
 
+    /**
+     * Implementation of EventListener interface.
+     * 
+     * @param {Event} e The Event object passed from dispatched events.
+     * @returns void
+     */
     handleEvent(e) {
-        if (e.type = 'audioloaded') {
-            this.start();
-        }
+        let type = e.type.toLowerCase();
 
-        if (e.type.toLowerCase() === 'canvasresize') {
-            this.start();
+        // switch in place for future events
+        // both events currently trigger same method
+        switch (type) {
+            case 'audioloaded':
+            case 'canvasresize':
+                this.start();
+                break;
+            default:
+                break;
         }
     }
 
+    /**
+     * Entry point for hands.js.
+     * Starts tick tock audio.
+     * Begins the timing loop (20 loops per second) and draws the hands.
+     * Polls for hourly and quarterly chimes
+     * 
+     * @returns void
+     */
     start() {
+        // background ticking audio
+        // SYNCHRONIZATION IS A PROBLEM HERE
         this.chimes.startTick();
 
         this.timer_handle = setInterval(() => {
@@ -34,10 +94,17 @@ export default class Hands extends Canvas {
             this.drawHands(this.ctx, this.origin, this.getTimeRadians());
 
             // SYNCHRONIZE CHIMES
-            // need chime?
+            // All chimes have been preloaded so there is little
+            // to no load latency.
+
+            // get current time
             let { h, m, s } = this.getNow();
 
             // HOUR
+            // hourly chimes have a 4 second winding up
+            // intro that needs to be taken into account 
+            // to allow the hourly chime to strike bang
+            // on the hour.
             // check for 4 seconds to go
             if (s === 56) {
                 if (m === 59) {
@@ -49,10 +116,12 @@ export default class Hands extends Canvas {
                         h++;
                     }
 
+                    // play audio
                     this.chimes.play(h);
                 }
             }
             // QUARTER
+            // these audio tracks come in straight so need no run in.
             else if (s === 0) {
                 if ([15, 30, 45].includes(m)) {
                     // no need to test for 0 as that is an hourly chime anyway
@@ -63,7 +132,18 @@ export default class Hands extends Canvas {
         }, 50);
     }
 
+    /**
+     * Draws the hour, minute and second hands and adds the centre
+     * hand fixing cap.
+     * 
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the hands canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Object} angles The object containg the current angles (in radians) of the hour, minute and second hands.
+     * @returns void
+     */
     drawHands(ctx, origin, angles) {
+        // this is just a series of canvas drawing instructions
+
         // HOUR HAND
         // ctx.resetTransform();
         ctx.translate(origin.x, origin.y);
@@ -190,7 +270,7 @@ export default class Hands extends Canvas {
 
         // bottom weight
         ctx.lineWidth = this.diameterRatio(4);
-        lgf = ctx.createRadialGradient(this.diameterRatio(0), this.diameterRatio(24),this.diameterRatio(6), this.diameterRatio(0), this.diameterRatio(28),this.diameterRatio(10));
+        lgf = ctx.createRadialGradient(this.diameterRatio(0), this.diameterRatio(24), this.diameterRatio(6), this.diameterRatio(0), this.diameterRatio(28), this.diameterRatio(10));
         lgf.addColorStop(0.0, "darkgrey");
         lgf.addColorStop(0.4, "silver");
         lgf.addColorStop(0.5, "white")
@@ -223,24 +303,45 @@ export default class Hands extends Canvas {
         ctx.resetTransform();
     }
 
+    /**
+     * Gets the current time, extracts the hours, minutes and seconds and
+     * converts them first to degrees and then radians.
+     * @returns {Object} Object containing hour, minute and seconds in radians
+     */
     getTimeRadians() {
         // time fragments
         let { h, m, s } = this.getNow();
 
+        // hour is 30 degrees
+        // plus the fractional elements of the minutes
+        // and seconds
         let h_deg = ((30 * h) + (m / 60 * 30) + (s / 360 * 6)) * deg_to_rad;
+
+        // minutes are 6 degrees
+        // plus the fractional element of the seconds
         let m_deg = ((6 * m) + (s / 60 * 6)) * deg_to_rad;
+
+        // seconds are 6 degrees
         let s_deg = (6 * s) * deg_to_rad;
 
+        // return object for hour, minutes and seconds
         return { hour: h_deg, minute: m_deg, second: s_deg };
     }
 
+    /**
+     * Gets the current time into an object containing hours, minutes and seconds
+     * @returns {Object} Object with properties h, m and s.
+     */
     getNow() {
+        // current time
         let now = new Date();
 
+        // return object for hour, minutes and seconds
         return { h: now.getHours() % 12, m: now.getMinutes(), s: now.getSeconds() };
     }
 } // END CLASS HANDS
 
+// define custom element if not previously defined
 if (!customElements.get('sds-clock-hands')) {
     customElements.define('sds-clock-hands', Hands);
 }

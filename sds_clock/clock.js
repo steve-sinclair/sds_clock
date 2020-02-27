@@ -1,3 +1,35 @@
+/***************************************************************
+ * FILENAME:    clock.js
+ * 
+ * DESCRIPTION: Extends Canvas (canvas.js).
+ *              Draws the clock face elements i.e.
+ *              clock surround,
+ *              face plate,
+ *              makers name and location,
+ *              the hour and minute containing circles,
+ *              the minute graduations,
+ *              the minute and hour numbers and numerals.
+ * 
+ * PUBLIC FUNCTIONS:
+ *              void draw()
+ * 
+ * NOTES:       Works in concert with hand.js and is
+ *              used as an underlay canvas to the hands
+ *              described in hands.js.
+ * 
+ * AUTHOR:      Steve Sinclair
+ * CREDIT:      James Alford
+ *              For inspiration on curved text algolrithms
+ *              http://html5graphics.blogspot.com/2015/03/html5-canvas-rounded-text.html#comment-form
+ * 
+ * START DATE:  17th February 2020
+ * LICENSE:     None. Free use.
+ * 
+ * CHANGE LOG:
+ * DATE         DETAIL  
+ * 26/2/20      General clean up. Removal of console logs.
+ * 27/2/20      Add module header and JSDocs headers
+***************************************************************/
 import Canvas from './canvas.js';
 import { deg_to_rad } from './functions.js';
 
@@ -10,12 +42,30 @@ export default class Clock extends Canvas {
         this.addEventListener('canvasresize', this);
     }
 
+    /**
+     * Implementation of EventListener interface.
+     * 
+     * @param {Event} e The Event object passed from dispatched events.
+     * @returns void
+     */
     handleEvent(e) {
         if (e.type.toLowerCase() === 'canvasresize') {
             this.draw();
         }
     }
 
+    /**
+     * Entry point for clock.js.
+     * Sets up the lengths along the radius for placement 
+     * of each discrete element.
+     * 
+     * Creates string arrays for the numbers and numerals.
+     * 
+     * Draws the clock face elements in order of back to front to avoid
+     * overpainting.
+     * 
+     * @returns void
+     */
     draw() {
         // clock face radii for design working outwards
         this.radii = {
@@ -53,7 +103,20 @@ export default class Clock extends Canvas {
         this.drawClockFaceNumbers(this.ctx, this.origin, this.radius, hours_array, this.font, this.diameterRatio(65), this.diameterRatio(-3), 0.25, this.radii.hour_numerals);
     }
 
+    /**
+     * Creates a radial gradient of differing shades of browns to
+     * recreate the light wood vaneer of the sample real world
+     * clock case.
+     * 
+     * Draws 2 arcs and fills with the gradient pattern.
+     * 
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the clock canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Number} radius The current radius of the clock face.
+     * @returns void
+     */
     drawSurround2(ctx, origin, radius) {
+        // brown wood effect(!) radial gradient
         let lgs = ctx.createRadialGradient(origin.x, origin.y, radius * this.radii.surround_inner, origin.x, origin.y, radius * this.radii.surround_outer);
         lgs.addColorStop(0, "saddlebrown");
         lgs.addColorStop(0.25, "sienna");
@@ -62,6 +125,7 @@ export default class Clock extends Canvas {
         lgs.addColorStop(1, "saddlebrown");
         ctx.fillStyle = lgs;
 
+        // draw 2 concentric circles to given radii
         ctx.beginPath();
         ctx.arc(origin.x, origin.y, radius * this.radii.surround_outer, 0, 2 * Math.PI, true);
         ctx.arc(origin.x, origin.y, radius * this.radii.surround_inner, 0, 2 * Math.PI, true);
@@ -69,8 +133,21 @@ export default class Clock extends Canvas {
         ctx.fill();
     }
 
+    /**
+     * Draws the face plate.
+     * 
+     * Adds the Electronically Controlled legend.
+     * 
+     * Draws the adjustment keyhole.
+     * 
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the clock canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Number} radius The current radius of the clock face.
+     * @returns void
+     */
+
     drawClockFacePlate(ctx, origin, radius) {
-        // plate colour
+        // face plate circle and fill
         ctx.fillStyle = "palegoldenrod";
         ctx.beginPath();
         ctx.arc(origin.x, origin.y, radius * this.radii.surround_inner, 0, 2 * Math.PI, true);
@@ -78,6 +155,7 @@ export default class Clock extends Canvas {
         ctx.fill();
 
         // legend
+        // centred and bottomed out baseline wise
         let legend = "ELECTRONICALLY CONTROLLED"
         ctx.font = `${this.diameterRatio(10)}px ${this.font}`;
         let width = this.diameterRatio(ctx.measureText(legend).width);
@@ -88,6 +166,7 @@ export default class Clock extends Canvas {
         ctx.fillText(legend, 0, radius * this.radii.legend, width * 0.7);
 
         // hand adjustment keyhole
+        // 2 concentric circles black with darkgrey outer
         ctx.fillStyle = "darkgrey";
         ctx.beginPath();
         ctx.arc(this.diameterRatio(0), radius * this.radii.keyhole, this.diameterRatio(9), 0, 2 * Math.PI, true);
@@ -100,6 +179,28 @@ export default class Clock extends Canvas {
         ctx.resetTransform();
     }
 
+
+    /**
+     * Reverses the text.
+     * 
+     * Recalculates the start angle based on arc lengths of each character
+     * of the text.
+     * 
+     * Rotate the canvas to this new angle.
+     * 
+     * Draws each character on the given curve.
+     * 
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the clock canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Number} radius The current radius of the clock face.
+     * @param {String} text The text to lay out on the curve.
+     * @param {String} font The font(s) in CSS style.
+     * @param {Number} font_size Font size in pixels.
+     * @param {Number} kerning The space in pixels (+/-) between characters.
+     * @param {Number} max_letter_width Ratio of text width to expand/condense text.
+     * @param {Number} radius_length_ratio Baseline from radius to draw text.
+     * @returns void
+     */
     drawMakersDetails(ctx, origin, radius, text, font, font_size, kerning, max_letter_width, radius_length_ratio) {
         ctx.font = `${font_size}px ${font}`;
         let clockwise = -1;
@@ -116,13 +217,14 @@ export default class Clock extends Canvas {
         for (let i = 0; i < text.length; i++) {
             let letter_width = ctx.measureText(text[i]).width;
 
+            // obtain the half angle offset along the curve
             let adjusted_for_kerning = i === text.length - 1 ? 0 : kerning;
             let adjusted_letter_width = (letter_width * max_letter_width) + adjusted_for_kerning;
             let adjusted_radius = radius * radius_length_ratio;
             let half_angle = (adjusted_letter_width / adjusted_radius) / (2 * clockwise);
 
             // adjust angle to 50% in the direction
-            start_angle += ((adjusted_letter_width / adjusted_radius) / (2 * clockwise));
+            start_angle += half_angle;
         }
 
         // rotate into actual start position
@@ -130,6 +232,7 @@ export default class Clock extends Canvas {
 
         // draw each numeral component
         for (let i = 0; i < text.length; i++) {
+            // get width of each character
             let letter_width = ctx.measureText(text[i]).width;
 
             // rotate half numeral
@@ -145,12 +248,22 @@ export default class Clock extends Canvas {
         ctx.resetTransform();
     }
 
+
+    /**
+     * Draws the outer and inner circles that delimit the minute
+     * and hour numbers, numerals and graduations.
+
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the clock canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Number} radius The current radius of the clock face.
+     * @returns void
+     */
     drawMinutesandHoursCircles(ctx, origin, radius) {
         // outer and inner arcs
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
 
-        // minute markers surround
+        // minute numbers and graduations markers surround
         ctx.beginPath();
         ctx.arc(origin.x, origin.y, radius * this.radii.minutes_outer, 0, 2 * Math.PI, true);
         ctx.stroke();
@@ -167,9 +280,23 @@ export default class Clock extends Canvas {
         ctx.stroke();
     }
 
+
+    /**
+     * Draws 60 rectangular markers, one for each minute.
+     * 
+     * For every 5 minute intervals, draw a diamond instead.
+     * 
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the clock canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Number} radius The current radius of the clock face.
+     * @returns void
+     */
     drawMinuteGraduations(ctx, origin, radius) {
+        // iterate for each minute
         for (let angle = 0; angle < 60; angle++) {
             ctx.translate(origin.x, origin.y);
+
+            // rotate extra 6 degrees for each minute
             ctx.rotate((angle * 6) * deg_to_rad);
 
             // 5 minute diamond markers
@@ -198,11 +325,40 @@ export default class Clock extends Canvas {
         }
     }
 
+
+    /**
+     * Iterates each element in text_array, sets angle in radians and adjusts for outward
+     * facing text, reversing text if necessary.
+     * 
+     * Set text baseline to middle and text align to centre.
+     * 
+     * Recalculates the start angle based on arc lengths of each character
+     * of the text and takes 50%.
+     * 
+     * Rotate the canvas to this new angle.
+     * 
+     * Draws each character on the given curve.
+     * 
+     * @param {CanvasRenderingContext2D} ctx The 2d context obtained from the clock canvas.
+     * @param {Object} origin The objext containg the x and y coordinates of the centre of the clock face.
+     * @param {Number} radius The current radius of the clock face.
+     * @param {Array} text_array Array of numerals etc to draw in a curved fashion around the clock face.
+     * @param {String} font The font(s) in CSS style.
+     * @param {Number} font_size Font size in pixels.
+     * @param {Number} kerning The space in pixels (+/-) between characters.
+     * @param {Number} max_letter_width Ratio of text width to expand/condense text.
+     * @param {Number} radius_length_ratio Baseline from radius to draw text.
+     * @param {Boolean} inward_facing If text faces inwards (default) or outwards.
+     * @param {Boolean} reverse If outward facing then set to true. false (default).
+     * @returns void
+     */
     drawClockFaceNumbers(ctx, origin, radius, text_array, font, font_size, kerning, max_letter_width, radius_length_ratio, inward_facing = true, reverse = false) {
         let clockwise = -1;
 
+        // CSS like font property
         ctx.font = `${font_size}px ${font}`;
 
+        // iterate text_array
         for (let angle = 0; angle < text_array.length; angle++) {
             let text = text_array[angle];
 
@@ -212,9 +368,11 @@ export default class Clock extends Canvas {
 
             // angle in radians
             let start_angle = (angle * 30) * deg_to_rad;
-            start_angle += (Math.PI * !inward_facing); // Rotate 180 if outward
 
-            // if reversal needed for outward facing text
+            // Rotate 180 if outward facing to turn text upside down
+            start_angle += (Math.PI * !inward_facing);
+
+            // reversal needed for outward facing text
             if (reverse) {
                 text = text.split("").reverse().join("");
             }
@@ -229,13 +387,14 @@ export default class Clock extends Canvas {
             for (let i = 0; i < text.length; i++) {
                 let letter_width = ctx.measureText(text[i]).width;
 
+                // obtain the half angle offset along the curve
                 let adjusted_for_kerning = i === text.length - 1 ? 0 : kerning;
                 let adjusted_letter_width = (letter_width * max_letter_width) + adjusted_for_kerning;
                 let adjusted_radius = radius * radius_length_ratio;
                 let half_angle = (adjusted_letter_width / adjusted_radius) / (2 * clockwise);
 
                 // adjust angle to 50% in the direction
-                start_angle += ((adjusted_letter_width / adjusted_radius) / (2 * clockwise));
+                start_angle += half_angle;
             }
 
             // rotate into actual start position
@@ -261,6 +420,7 @@ export default class Clock extends Canvas {
     }
 } // END CLASS CLOCK
 
+// define custom element if not previously defined
 if (!customElements.get('sds-clock-face')) {
     customElements.define('sds-clock-face', Clock);
 }
