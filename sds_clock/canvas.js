@@ -11,9 +11,8 @@
  * 
  * NOTES:       Implemented by both the Clock and Hands objects.
  * 
- * PROBLEMS:    The resize method is crucial and needs some validation
- *              and error checking which I will implement shortly.
- *              It just works fine in my hands but that is not the issue.
+ * PROBLEMS:    None. resize parameter vaildated at calling
+ *              function.
  * 
  * AUTHOR:      Steve Sinclair
  * START DATE:  17th February 2020
@@ -23,6 +22,7 @@
  * DATE         DETAIL  
  * 26/2/20      General clean up. Removal of console logs.
  * 27/2/20      Add module header and JSDocs headers
+ * 28/2/20      Error handling for diameter value passed
 ***************************************************************/
 export default class Canvas extends HTMLElement {
     constructor(canvas) {
@@ -53,8 +53,6 @@ export default class Canvas extends HTMLElement {
      * @returns void
      */
     resize(diameter) {
-        // need to validate and error check here
-
         // set this width and height
         this.canvas.setAttribute('width', `${diameter}px`);
         this.canvas.setAttribute('height', `${diameter}px`);

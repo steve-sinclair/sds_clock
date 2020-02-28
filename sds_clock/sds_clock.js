@@ -22,6 +22,7 @@
  * DATE         DETAIL  
  * 26/2/20      General clean up. Removal of console logs.
  * 27/2/20      Add module header and JSDocs headers
+ * 28/2/20      Error handling for diameter value passed
 ***************************************************************/
 import template from "./template.js";
 import Clock from './clock.js';
@@ -104,6 +105,13 @@ export default class sdsClock extends HTMLElement {
      * @returns void
      */
     set diameter(value) {
+        // validate value
+        let pattern = /^\d+$/;
+
+        if (!pattern.test(value){
+            throw `Illegal argument type (${value}, must be Number)`
+        }
+
         // no need to proceed if values are the same
         if (parseInt(value) !== this._diameter) {
             // set object private property

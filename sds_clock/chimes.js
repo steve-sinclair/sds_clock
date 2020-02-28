@@ -24,6 +24,7 @@
  * DATE         DETAIL  
  * 26/2/20      General clean up. Removal of console logs.
  * 27/2/20      Add module header and JSDocs headers
+ * 28/2/20      Error handling for audio loading
 ***************************************************************/
 export default class Chimes extends HTMLElement {
     constructor() {
@@ -46,9 +47,11 @@ export default class Chimes extends HTMLElement {
     init() {
         // OBJECTS
         // create and prime tick tock sound
-        this.ticking = new Audio('audio/ticktock2.mp3');
+        this.ticking = new Audio();
+        this.ticking.addEventListener('error', this);
         this.ticking.id = "ticking";
         this.ticking.loop = true;
+        this.ticking.src = "audio/ticktock2.mp3"
     }
 
     /**
@@ -70,8 +73,9 @@ export default class Chimes extends HTMLElement {
             // audio object
             let x = new Audio();
 
-            // event listener handled by the class
+            // event listeners handled by the class
             x.addEventListener('canplaythrough', this);
+            x.addEventListener('error', this);
 
             // add class for css selector identification
             x.classList.add('quarter_chime');
@@ -88,6 +92,7 @@ export default class Chimes extends HTMLElement {
         for (let i = 0; i < 12; i++) {
             let x = new Audio();
             x.addEventListener('canplaythrough', this);
+            x.addEventListener('error', this);
             x.classList.add('hour_chime');
             x.src = `audio/h${i + 1}.mp3`;
 
@@ -171,6 +176,18 @@ export default class Chimes extends HTMLElement {
                     });
 
                     this.dispatchEvent(event);
+                }
+                break;
+            case 'error':
+                switch (el.error.code) {
+                    case MEDIA_ERR_ABORTED:
+                        throw `Error: ${el.error.message}, Code: ${el.error.code} - Audio download aborted (${el.src})`;
+                    case MEDIA_ERR_NETWORK:
+                        throw `Error: ${el.error.message}, Code: ${el.error.code} - Audio download failed due to network error (${el.src})`;
+                    case MEDIA_ERR_DECODE:
+                        throw `Error: ${el.error.message}, Code: ${el.error.code} - Audio could not be decoded (${el.src})`;
+                    case MEDIA_ERR_SRC_NOT_SUPPORTED:
+                        throw `Error: ${el.error.message}, Code: ${el.error.code} - Audio format not supported (${el.src})`;
                 }
                 break;
             default:
