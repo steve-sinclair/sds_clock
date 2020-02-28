@@ -10,9 +10,7 @@
  * 
  * NOTES:       imports the template, clock and hands modules.
  * 
- * PROBLEMS:    The diameter set method is crucial and needs some validation
- *              and error checking which I will implement shortly.
- *              It just works fine in my hands but that is not the issue.
+ * PROBLEMS:    None obvious at present.
  * 
  * AUTHOR:      Steve Sinclair
  * START DATE:  17th February 2020
